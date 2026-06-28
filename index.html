@@ -11,23 +11,10 @@
 </head>
 <body>
 
-<div class="container" id="listen-app">
-    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
-                絵画を聴く
-            </h1>
-            <div style="font-size: 0.55rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
-                ID: <span id="listen-user-display" style="color: var(--text-main);">生成中...</span>
-            </div>
-        </div>
-        <button id="btn-change-mode-from-listen" class="action-btn">演奏モードへ</button>
-    </header>
-
+<div class="container">
     <div class="section">
-        <div class="section-title">絵画インターフェース</div>
-        
         <div class="painting-view-container">
+            
             <div id="base-painting-wrapper" class="base-painting-wrapper">
                 <img src="./assets/monet_suiren.jpg" alt="Monet" class="painting-image">
                 <div class="invisible-grid">
@@ -44,42 +31,9 @@
             </div>
 
             <div id="trimming-zoom-wrapper" class="trimming-zoom-wrapper" style="display: none;">
-                <img id="trimmed-image-target" src="./assets/monet_suiren.jpg" alt="Trimmed Monet">
+                <img id="trimmed-image-target" src="./assets/monet_suiren.jpg" alt="Trimmed Monet" class="painting-image">
             </div>
-        </div>
-
-        <div id="zoom-controls-area" class="zoom-controls-area" style="visibility: hidden;">
-            <div id="playing-sound-name" class="sound-title-display">音声再生中...</div>
-            <button id="btn-zoom-back" class="record-btn-boxed">全体表示に戻る</button>
-        </div>
-    </div>
-</div>
-
-<div class="container" id="main-app" style="display: none;">
-    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
-                絵画を聴く
-            </h1>
-            <div style="font-size: 0.55rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
-                Mode: <span style="color: var(--text-main);">マルチチャンネル演奏固定</span>
-            </div>
-        </div>
-        <button id="btn-back-to-listen" class="action-btn">鑑賞モードへ</button>
-    </header>
-
-    <div class="section">
-        <div class="section-title">空間に配置する音を1つ選択</div>
-        <div class="fixed-sound-selector" id="fixed-sound-list"></div>
-    </div>
-
-    <div class="section">
-        <div class="section-title">端末スピーカー出力制御</div>
-        <button id="btn-fixed-play" class="record-btn-boxed" style="padding: 20px 0; font-size: 0.85rem; font-weight: 400;">
-            この音を大音量でループ再生して配置する
-        </button>
-        <div id="wakelock-status" style="font-size: 0.55rem; color: var(--danger); text-align: center; margin-top: 12px; letter-spacing: 0.05em; display:none;">
-            ⚠️ 画面スリープ防止ロックが有効化されています。このまま絵画の前に置いてください。
+            
         </div>
     </div>
 </div>
@@ -96,17 +50,13 @@
         productName: "kaiga-wo-kiku",
         productVersion: "0.1",
     };
-
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
-        createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
-            console.log("Unity Loader: " + (100 * progress) + "%");
-        }).then((instance) => {
+        createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {}).then((instance) => {
             window.unityInstance = instance;
-            console.log("Unity WebGL ロード完了。");
         }).catch((message) => {
-            console.error("Unity WebGL ロード失敗:", message);
+            console.error(message);
         });
     };
     document.body.appendChild(script);
