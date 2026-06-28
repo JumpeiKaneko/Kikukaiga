@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>絵画を聴く — 睡蓮の池と日本の橋</title>
+    <link rel="stylesheet" href="style.css?v=20260628_kiku">
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+<div id="user-modal" class="modal-overlay">
+    <div class="modal-content" id="modal-step-1">
+        <h2>絵画を聴く</h2>
+        <div class="auth-buttons">
+            <button id="btn-choice-first" class="menu-choice-btn">初めて利用する</button>
+            <button id="btn-choice-return" class="menu-choice-btn">2回目以降（再開）</button>
+        </div>
+    </div>
+    
+    <div class="modal-content" id="modal-step-2" style="display: none;">
+        <h2 id="modal-input-title">ユーザー名を入力してください</h2>
+        <input type="text" id="input-username" placeholder="例: name">
+        <button id="btn-login">ログイン</button>
+        <button id="btn-back-step" class="action-btn-back">戻る</button>
+    </div>
+
+    <div class="modal-content" id="modal-step-3" style="display: none;">
+        <h2 style="margin-bottom: 30px;">モードを選択</h2>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <button id="btn-mode-listen" class="record-btn-boxed">絵画を音と鑑賞する</button>
+            <button id="btn-mode-record" class="record-btn-boxed">みんなで音を出す（固定演奏）</button>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="listen-app" style="display: none;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
+                絵画を聴く
+            </h1>
+            <div style="font-size: 0.65rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
+                User: <span id="listen-user-display" style="color: var(--text-main);"></span>
+            </div>
+        </div>
+        <button id="btn-change-mode-from-listen" class="action-btn">演奏モードへ</button>
+    </header>
+
+    <div class="section">
+        <div class="section-title">9分割 音響インターフェース</div>
+        
+        <div class="painting-grid-container">
+            <div class="painting-grid">
+                <button class="grid-cell" data-id="1" data-name="植物音（木々を揺らす風）"><span>木々を揺らす風</span></button>
+                <button class="grid-cell" data-id="2" data-name="植物音（竹の擦れ合い）"><span>竹の擦れ合い</span></button>
+                <button class="grid-cell" data-id="3" data-name="植物音（上空の鳥の声）"><span>上空の鳥の声</span></button>
+                
+                <button class="grid-cell" data-id="4" data-name="橋周辺（水門の音）"><span>水門の音</span></button>
+                <button class="grid-cell" data-id="5" data-name="橋周辺（太鼓橋のきしみ）"><span>太鼓橋のきしみ</span></button>
+                <button class="grid-cell" data-id="6" data-name="橋周辺（近くを飛ぶ鳥）"><span>近くを飛ぶ鳥</span></button>
+                
+                <button class="grid-cell" data-id="7" data-name="水面（小川の水流）"><span>小川の水流</span></button>
+                <button class="grid-cell" data-id="8" data-name="水面（水面の揺らぎ）"><span>水面の揺らぎ</span></button>
+                <button class="grid-cell" data-id="9" data-name="水面（カエル・虫の声）"><span>カエル・虫の声</span></button>
+            </div>
+        </div>
+        <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-top: 12px; letter-spacing: 0.05em;">
+            タップすると該当領域の音が重なります（再度タップで解除）
+        </div>
+    </div>
+</div>
+
+<div class="container" id="main-app" style="display: none;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
+                絵画を聴く
+            </h1>
+            <div style="font-size: 0.65rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
+                Mode: <span style="color: var(--text-main);">マルチチャンネル演奏固定</span>
+            </div>
+        </div>
+        <button id="btn-back-to-listen" class="action-btn">鑑賞モードへ</button>
+    </header>
+
+    <div class="section">
+        <div class="section-title">空間に配置する音を1つ選択</div>
+        <div class="fixed-sound-selector" id="fixed-sound-list">
+            </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">端末スピーカー出力制御</div>
+        <button id="btn-fixed-play" class="record-btn-boxed" style="padding: 20px 0; font-size: 0.85rem; font-weight: 400;">
+            この音を大音量でループ再生して配置する
+        </button>
+        <div id="wakelock-status" style="font-size: 0.55rem; color: var(--danger); text-align: center; margin-top: 12px; letter-spacing: 0.05em; display:none;">
+            ⚠️ 画面スリープ防止ロックが有効化されています。このまま絵画の前に置いてください。
+        </div>
+    </div>
+</div>
+
+<canvas id="unity-canvas" style="display: none; width: 0px; height: 0px Dino;"></canvas>
+<script>
+    var loaderUrl = "./Unity/Build/build_bird.loader.js"; 
+    var config = {
+        dataUrl: "./Unity/Build/build_bird.data",
+        frameworkUrl: "./Unity/Build/build_bird.framework.js",
+        codeUrl: "./Unity/Build/build_bird.wasm",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "kaiga-wo-kiku",
+        productVersion: "0.1",
+    };
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = () => {
+        createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
+            console.log("Unity BGM Loading: " + (100 * progress) + "%");
+        }).then((instance) => {
+            window.unityInstance = instance;
+            console.log("Unity BGM WebGL ロード完了。システムと正常に同期されました。");
+            if(currentUser !== "") {
+                playUnityAudio();
+            }
+        }).catch((message) => {
+            console.error("Unity WebGL ロード失敗:", message);
+        });
+    };
+    script.onerror = () => {
+        console.error("Unityのローダーファイルが見つかりません。");
+    };
+    document.body.appendChild(script);
+</script>
+
+<script src="app.js?v=20260628_kiku"></script>
+</body>
+</html>
