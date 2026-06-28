@@ -4,50 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>絵画を聴く</title>
-    <link rel="stylesheet" href="style.css?v=20260628_final_fixed">
+    <link rel="stylesheet" href="style.css?v=20260628_perfect_boxed">
 </head>
 <body>
 
 <div class="container">
-    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
-                絵画を聴く
-            </h1>
-        </div>
+    <header>
+        <h1 class="project-title">絵画を聴く</h1>
     </header>
 
-    <div class="section">
-        <div class="section-title">INTERFACE</div>
-
-        <div class="painting-view-container">
+    <main>
+        <div class="painting-view-container" id="painting-frame">
             
-            <div id="view-full" class="base-painting-wrapper">
-                <img src="./assets/monet_suiren.jpg" alt="Monet" class="painting-image">
-                
-                <div class="invisible-grid">
-                    <button class="grid-cell-trigger" data-id="1"></button>
-                    <button class="grid-cell-trigger" data-id="2"></button>
-                    <button class="grid-cell-trigger" data-id="3"></button>
-                    <button class="grid-cell-trigger" data-id="4"></button>
-                    <button class="grid-cell-trigger" data-id="5"></button>
-                    <button class="grid-cell-trigger" data-id="6"></button>
-                    <button class="grid-cell-trigger" data-id="7"></button>
-                    <button class="grid-cell-trigger" data-id="8"></button>
-                    <button class="grid-cell-trigger" data-id="9"></button>
-                </div>
-            </div>
-
-            <div id="view-zoom" class="trimming-zoom-wrapper" style="display: none;">
-                <img id="trimmed-image-target" src="./assets/monet_suiren.jpg" alt="Trimmed Monet" class="painting-image">
+            <img id="painting-target-image" src="./assets/monet_suiren.jpg" alt="Monet">
+            
+            <div class="invisible-grid">
+                <button class="grid-cell-trigger" data-id="1"></button>
+                <button class="grid-cell-trigger" data-id="2"></button>
+                <button class="grid-cell-trigger" data-id="3"></button>
+                <button class="grid-cell-trigger" data-id="4"></button>
+                <button class="grid-cell-trigger" data-id="5"></button>
+                <button class="grid-cell-trigger" data-id="6"></button>
+                <button class="grid-cell-trigger" data-id="7"></button>
+                <button class="grid-cell-trigger" data-id="8"></button>
+                <button class="grid-cell-trigger" data-id="9"></button>
             </div>
             
         </div>
-    </div>
+
+        <div id="controls-area" class="controls-area" style="visibility: hidden;">
+            <button id="btn-zoom-back" class="record-btn-boxed">戻る</button>
+        </div>
+    </main>
 </div>
 
 <div id="unity-container" style="display: none;"></div>
 
-<script src="app.js?v=20260628_final_fixed"></script>
+<script src="app.js?v=20260628_perfect_boxed"></script>
 </body>
 </html>
