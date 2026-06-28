@@ -1,3 +1,4 @@
+/* 最初のコードから、配色・フォント・引き締まった佇まいを100%継承 */
 :root {
     --bg-color: #ffffff;
     --text-main: #111111;
@@ -14,16 +15,6 @@
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "Hiragino Sans", "ヒラギノ角ゴ ProN", sans-serif;
 }
 
-button, input {
-    font-family: inherit;
-    font-size: inherit;
-    font-weight: inherit;
-    letter-spacing: inherit;
-    color: inherit;
-    outline: none;
-    background: transparent;
-}
-
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
@@ -34,9 +25,10 @@ body {
     justify-content: center;
 }
 
+/* 最初のコンテナサイズ・美しい余白を完全厳守 */
 .container {
     width: 100%;
-    max-width: 540px; /* 元のコンテナ横幅を完全厳守 */
+    max-width: 540px;
 }
 
 header {
@@ -47,6 +39,7 @@ header {
     margin-bottom: 60px;
 }
 
+/* 元コードのMixerやTimelineと同様の、大文字・極小のセクションタイトル表現 */
 .section-title {
     font-size: 0.6rem;
     color: var(--text-muted);
@@ -55,42 +48,7 @@ header {
     text-transform: uppercase;
 }
 
-button {
-    color: var(--text-main);
-    border: none;
-    border-bottom: 1px solid var(--line-color);
-    padding: 6px 0;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: left;
-}
-
-button:hover {
-    border-bottom-color: var(--text-main);
-}
-
-/* 四角いデザインの踏襲 */
-.record-btn-boxed {
-    width: 100%;
-    color: var(--text-main);
-    background-color: transparent;
-    border: 1px solid var(--text-main);
-    padding: 10px 0;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.record-btn-boxed:hover {
-    background-color: var(--text-main);
-    color: var(--bg-color);
-}
-
-/* 額縁枠サイズ固定コンテナ・美しい余白設計 */
+/* 絶対正方形を維持する絵画コンテナ（額縁としての役割を固定） */
 .painting-view-container {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -115,7 +73,7 @@ button:hover {
     display: block;
 }
 
-/* 透明タップ判定グリッド（確実に最前面固定） */
+/* 表面からは線が一切見えない裏側の9分割タップ判定判定エリア（確実にタップを拾うため最前面へ） */
 .invisible-grid {
     position: absolute;
     top: 0;
@@ -135,123 +93,17 @@ button:hover {
     cursor: pointer;
     width: 100%;
     height: 100%;
-    -webkit-tap-highlight-color: transparent;
+    -webkit-tap-highlight-color: transparent; /* モバイルタップ時の青い残像をカット */
 }
 
-/* 枠を壊さず内側の画像位置だけを縦横%で美しくズームさせる変形マッピング */
+/* 額縁の枠サイズを破壊せず、内側の画像位置だけを3倍のスケールで美しくシフトズームさせる指定 */
 #trimmed-image-target {
     position: absolute;
+    top: 0;
+    left: 0;
     width: 300%;
     height: 300%;
     object-fit: cover;
     display: block;
     transition: object-position 0.2s ease-out;
-}
-
-/* 下部「戻る」エリアの余白設計 */
-.controls-area {
-    width: 100%;
-    margin-top: 32px;
-    display: flex;
-    justify-content: center;
-    height: 40px;
-}
-
-.back-text-trigger {
-    font-size: 0.8rem;
-    letter-spacing: 0.15em;
-    color: var(--text-main);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    padding: 8px 16px;
-    transition: color 0.3s ease;
-    outline: none;
-}
-
-.back-text-trigger:hover {
-    color: var(--text-muted);
-}
-
-/* モーダル関連（元の美学デザインを100%維持） */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #ffffff;
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    text-align: center;
-    max-width: 320px;
-    width: 100%;
-    padding: 40px 20px;
-}
-
-.modal-content h2 { 
-    font-size: 0.9rem; 
-    font-weight: 400; 
-    letter-spacing: 0.15em; 
-    margin-bottom: 40px; 
-    color: var(--text-main);
-}
-
-.auth-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.menu-choice-btn {
-    width: 100%;
-    text-align: center;
-    padding: 14px 0;
-    font-size: 0.8rem;
-    letter-spacing: 0.1em;
-    border-bottom: 1px solid var(--line-color);
-}
-
-.menu-choice-btn:hover {
-    border-bottom-color: var(--text-main);
-}
-
-.modal-content input {
-    width: 100%;
-    padding: 10px 0;
-    border: none;
-    border-bottom: 1px solid var(--line-color);
-    margin-bottom: 40px;
-    text-align: center;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
-}
-
-.modal-content input:focus {
-    border-bottom-color: var(--text-main);
-}
-
-.modal-content button#btn-login { 
-    width: 100%; 
-    text-align: center; 
-    padding: 12px 0; 
-    border: none;
-    border-bottom: 1px solid var(--text-main); 
-    font-size: 0.8rem;
-    letter-spacing: 0.2em;
-}
-
-.action-btn-back {
-    margin-top: 20px; 
-    text-align: center; 
-    width: 100%; 
-    letter-spacing: 0.1em;
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    border: none;
 }
