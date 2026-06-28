@@ -1,6 +1,7 @@
 let wakeLock = null;
 let currentUnityInstance = null;
 let currentScriptElement = null;
+let activeCellId = null;
 
 function getUnityInstance() {
     if (typeof window.unityInstance !== "undefined" && window.unityInstance && typeof window.unityInstance.SendMessage === "function") return window.unityInstance;
@@ -57,47 +58,53 @@ function unloadUnityWebGL() {
     unityContainer.innerHTML = '';
 }
 
-const viewFull = document.getElementById('view-full');
-const viewZoom = document.getElementById('view-zoom');
-const trimmedImageTarget = document.getElementById('trimmed-image-target');
-const paintingContainer = document.querySelector('.painting-view-container');
+const paintingFrame = document.getElementById('painting-frame');
+const targetImage = document.getElementById('painting-target-image');
+const controlsArea = document.getElementById('controls-area');
+const btnZoomBack = document.getElementById('btn-zoom-back');
 
-// 1. 初期状態（全体表示）からの9分割タップ
+// 全面の9分割エリアのクリックイベント
 document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
     trigger.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = trigger.getAttribute('data-id');
 
+        // すでにズーム状態で、かつ「同じ場所」がタップされた場合は全体に戻す
+        if (paintingFrame.classList.contains('is-zoomed') && activeCellId === id) {
+            triggerReset();
+            return;
+        }
+
         const row = Math.floor((id - 1) / 3);
         const col = (id - 1) % 3;
-        trimmedImageTarget.style.objectPosition = `${col * 50}% ${row * 50}%`;
+        targetImage.style.objectPosition = `${col * 50}% ${row * 50}%`;
 
-        viewFull.style.display = 'none';
-        viewZoom.style.display = 'block';
-        
-        // ズーム状態であることを示すクラスを外枠に付与
-        paintingContainer.classList.add('is-zoomed');
+        paintingFrame.classList.add('is-zoomed');
+        controlsArea.style.visibility = 'visible'; // 四角いボタンを表示
+        activeCellId = id; 
 
         loadAndPlayUnityWebGL(id);
         requestWakeLock();
     });
 });
 
-// 2. ズーム状態からの再タップ（額縁コンテナ自体のクリックで確実に全体へ戻す）
-paintingContainer.addEventListener('click', (e) => {
-    // ズーム状態のときだけ作動させる
-    if (!paintingContainer.classList.contains('is-zoomed')) return;
+// 四角い「戻る」ボタンクリックで全体表示へ復帰
+if (btnZoomBack) {
+    btnZoomBack.addEventListener('click', (e) => {
+        e.stopPropagation();
+        triggerReset();
+    });
+}
+
+function triggerReset() {
+    paintingFrame.classList.remove('is-zoomed');
+    targetImage.style.objectPosition = 'center'; 
+    controlsArea.style.visibility = 'hidden'; 
+    activeCellId = null;
     
-    // 透明グリッドのボタン自体へのタップだった場合はすり抜ける（多重動作防止）
-    if (e.target.classList.contains('grid-cell-trigger')) return;
-
-    viewZoom.style.display = 'none';
-    viewFull.style.display = 'block';
-    paintingContainer.classList.remove('is-zoomed');
-
     unloadUnityWebGL();
     releaseWakeLock();
-});
+}
 
 async function requestWakeLock() {
     try {
