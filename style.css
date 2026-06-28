@@ -14,7 +14,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "Hiragino Sans", "ヒラギノ角ゴ ProN", sans-serif;
 }
 
-button, input, select, textarea {
+button, input {
     font-family: inherit;
     font-size: inherit;
     font-weight: inherit;
@@ -36,15 +36,15 @@ body {
 
 .container {
     width: 100%;
-    max-width: 480px; /* スマートフォンでの佇まいを美しく固定 */
+    max-width: 540px; /* 元のコンテナ横幅を完全厳守 */
 }
 
 header {
-    margin-bottom: 60px;
+    margin-bottom: 70px;
 }
 
 .section {
-    margin-bottom: 50px;
+    margin-bottom: 60px;
 }
 
 .section-title {
@@ -71,119 +71,13 @@ button:hover {
     border-bottom-color: var(--text-main);
 }
 
-/* サイズを絶対固定する絵画コンテナ枠。画面いっぱいには広げず、美しい余白を保持 */
-.painting-view-container {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    border: 1px solid var(--text-main);
-    background-color: #111111;
-    position: relative;
-    overflow: hidden; /* 中身のトリミングはみ出しをここでマスク */
-}
-
-.base-painting-wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.painting-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-/* 表面からは線が一切見えないタップ判定裏レイヤー */
-.invisible-grid {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-    z-index: 5;
-}
-
-.grid-cell-trigger {
-    background: transparent;
-    cursor: pointer;
-}
-
-.grid-cell-trigger:pointer-hover {
-    background-color: rgba(255, 255, 255, 0.04);
-}
-
-/* 枠を破壊せず、内側だけで300%ズームを再現するトリミング用ラッパー */
-.trimming-zoom-wrapper {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-#trimmed-image-target {
-    position: absolute;
-    width: 300%;
-    height: 300%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.2s ease-out;
-}
-
-/* 下部コントロールエリアの十分な余白設計 */
-.zoom-controls-area {
-    width: 100%;
-    margin-top: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    transition: opacity 0.3s ease;
-}
-
-.sound-title-display {
-    font-size: 0.65rem;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    text-align: center;
-}
-
-/* 既存のミニマルなボタンデザインの踏襲 */
-.fixed-sound-selector {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-bottom: 30px;
-}
-
-.fixed-sound-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--line-color);
-}
-
-.fixed-sound-item input[type="radio"] {
-    accent-color: var(--text-main);
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-}
-
-.fixed-sound-item label {
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    cursor: pointer;
-}
-
+/* 四角いデザインの踏襲 */
 .record-btn-boxed {
     width: 100%;
     color: var(--text-main);
     background-color: transparent;
     border: 1px solid var(--text-main);
-    padding: 12px 0;
+    padding: 10px 0;
     font-size: 0.75rem;
     letter-spacing: 0.1em;
     text-align: center;
@@ -196,28 +90,90 @@ button:hover {
     color: var(--bg-color);
 }
 
-.record-btn-boxed.recording {
-    color: var(--danger);
-    border-color: var(--danger);
-    background-color: transparent;
-    animation: pulse 2s infinite ease-in-out;
+/* 額縁枠サイズ固定コンテナ・美しい余白設計 */
+.painting-view-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 1px solid var(--text-main);
+    background-color: #111111;
+    position: relative;
+    overflow: hidden; 
 }
 
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
+.base-painting-wrapper, .trimming-zoom-wrapper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
-.action-btn {
-    font-size: 0.65rem;
+.painting-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 透明タップ判定グリッド（確実に最前面固定） */
+.invisible-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    z-index: 50;
+}
+
+.grid-cell-trigger {
+    background: transparent;
     border: none;
-    padding: 4px 0;
-    color: var(--text-muted);
-    letter-spacing: 0.1em;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* モーダル関連 */
+/* 枠を壊さず内側の画像位置だけを縦横%で美しくズームさせる変形マッピング */
+#trimmed-image-target {
+    position: absolute;
+    width: 300%;
+    height: 300%;
+    object-fit: cover;
+    display: block;
+    transition: object-position 0.2s ease-out;
+}
+
+/* 下部「戻る」エリアの余白設計 */
+.controls-area {
+    width: 100%;
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+    height: 40px;
+}
+
+.back-text-trigger {
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: var(--text-main);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px 16px;
+    transition: color 0.3s ease;
+    outline: none;
+}
+
+.back-text-trigger:hover {
+    color: var(--text-muted);
+}
+
+/* モーダル関連（元の美学デザインを100%維持） */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -243,6 +199,7 @@ button:hover {
     font-weight: 400; 
     letter-spacing: 0.15em; 
     margin-bottom: 40px; 
+    color: var(--text-main);
 }
 
 .auth-buttons {
@@ -260,6 +217,10 @@ button:hover {
     border-bottom: 1px solid var(--line-color);
 }
 
+.menu-choice-btn:hover {
+    border-bottom-color: var(--text-main);
+}
+
 .modal-content input {
     width: 100%;
     padding: 10px 0;
@@ -268,10 +229,16 @@ button:hover {
     margin-bottom: 40px;
     text-align: center;
     font-size: 0.9rem;
+    letter-spacing: 0.05em;
+}
+
+.modal-content input:focus {
+    border-bottom-color: var(--text-main);
 }
 
 .modal-content button#btn-login { 
     width: 100%; 
+    text-align: center; 
     padding: 12px 0; 
     border: none;
     border-bottom: 1px solid var(--text-main); 
@@ -281,7 +248,9 @@ button:hover {
 
 .action-btn-back {
     margin-top: 20px; 
+    text-align: center; 
     width: 100%; 
+    letter-spacing: 0.1em;
     font-size: 0.7rem;
     color: var(--text-muted);
     border: none;
