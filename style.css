@@ -38,7 +38,6 @@ header {
     color: var(--text-main);
 }
 
-/* 元コードから完全継承した、四角いボタンのデザイン */
 .record-btn-boxed {
     width: 100%;
     color: var(--text-main);
@@ -64,12 +63,22 @@ header {
     width: 100%;
     aspect-ratio: 1 / 1;
     border: 1px solid var(--text-main);
-    background-color: #111111;
+    background-color: #ffffff;
     position: relative;
     overflow: hidden; 
 }
 
-/* 初期状態（等倍表示）の画像スタイル */
+/* 画像を常に枠に固定してクリッピングする領域 */
+.image-clipper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+/* 初期状態（等倍表示）。画像全体が100%の枠内にきれいに収まっている */
 #painting-target-image {
     position: absolute;
     top: 0;
@@ -78,17 +87,18 @@ header {
     height: 100%;
     object-fit: cover;
     display: block;
+    transform: scale(1);
+    transform-origin: 0 0;
+    transition: transform 0.22s ease-out;
     z-index: 1;
-    transition: width 0.2s ease-out, height 0.2s ease-out, object-position 0.2s ease-out;
 }
 
-/* ズーム状態（is-zoomed）が外枠に付与された際、画像だけを枠の中で3倍（300%）に変形 */
+/* ズーム状態（is-zoomed）になった瞬間、画像を正確に3倍にし、タップされた1マスの領域（33.33%ずつシフト）へピタッとスライドさせて画面を9個に切り分ける */
 .painting-view-container.is-zoomed #painting-target-image {
-    width: 300%;
-    height: 300%;
+    transform: scale(3) translate(calc(var(--col) * -33.3333%), calc(var(--row) * -33.3333%));
 }
 
-/* 透明な最前面の9分割タップエリア（z-index: 99固定） */
+/* 透明な最前面の9分割タップエリア */
 .invisible-grid {
     position: absolute;
     top: 0;
@@ -111,7 +121,6 @@ header {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 下部「戻る」エリアの余白設計 */
 .controls-area {
     width: 100%;
     margin-top: 40px;
