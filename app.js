@@ -59,7 +59,6 @@ function unloadUnityWebGL() {
 }
 
 const paintingFrame = document.getElementById('painting-frame');
-const targetImage = document.getElementById('painting-target-image');
 const controlsArea = document.getElementById('controls-area');
 const btnZoomBack = document.getElementById('btn-zoom-back');
 
@@ -69,18 +68,22 @@ document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
         e.stopPropagation();
         const id = trigger.getAttribute('data-id');
 
-        // すでにズーム状態で、かつ「同じ場所」がタップされた場合は全体に戻す
+        // すでにズーム状態で「同じ場所」がタップされた場合は全体に戻す
         if (paintingFrame.classList.contains('is-zoomed') && activeCellId === id) {
             triggerReset();
             return;
         }
 
-        const row = Math.floor((id - 1) / 3);
+        // 3x3のどこのマス（何列目、何行目）かを0〜2の数値で計算
         const col = (id - 1) % 3;
-        targetImage.style.objectPosition = `${col * 50}% ${row * 50}%`;
+        const row = Math.floor((id - 1) / 3);
+
+        // CSS側に列・行の数値を渡して、画像を正確に9等分のそのマスへ移動・クリップさせる
+        paintingFrame.style.setProperty('--col', col);
+        paintingFrame.style.setProperty('--row', row);
 
         paintingFrame.classList.add('is-zoomed');
-        controlsArea.style.visibility = 'visible'; // 四角いボタンを表示
+        controlsArea.style.visibility = 'visible'; 
         activeCellId = id; 
 
         loadAndPlayUnityWebGL(id);
@@ -98,7 +101,6 @@ if (btnZoomBack) {
 
 function triggerReset() {
     paintingFrame.classList.remove('is-zoomed');
-    targetImage.style.objectPosition = 'center'; 
     controlsArea.style.visibility = 'hidden'; 
     activeCellId = null;
     
