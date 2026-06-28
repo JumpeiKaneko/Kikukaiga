@@ -50,25 +50,32 @@
     </header>
 
     <div class="section">
-        <div class="section-title">9分割 音響インターフェース</div>
+        <div class="section-title">絵画インターフェース</div>
         
-        <div class="painting-grid-container">
-            <div class="painting-grid">
-                <button class="grid-cell" data-id="1" data-name="植物音（木々を揺らす風）"><span>木々を揺らす風</span></button>
-                <button class="grid-cell" data-id="2" data-name="植物音（竹の擦れ合い）"><span>竹の擦れ合い</span></button>
-                <button class="grid-cell" data-id="3" data-name="植物音（上空の鳥の声）"><span>上空の鳥の声</span></button>
-                
-                <button class="grid-cell" data-id="4" data-name="橋周辺（水門の音）"><span>水門の音</span></button>
-                <button class="grid-cell" data-id="5" data-name="橋周辺（太鼓橋のきしみ）"><span>太鼓橋のきしみ</span></button>
-                <button class="grid-cell" data-id="6" data-name="橋周辺（近くを飛ぶ鳥）"><span>近くを飛ぶ鳥</span></button>
-                
-                <button class="grid-cell" data-id="7" data-name="水面（小川の水流）"><span>小川の水流</span></button>
-                <button class="grid-cell" data-id="8" data-name="水面（水面の揺らぎ）"><span>水面の揺らぎ</span></button>
-                <button class="grid-cell" data-id="9" data-name="水面（カエル・虫の声）"><span>カエル・虫の声</span></button>
+        <div class="painting-view-container">
+            <div id="base-painting-wrapper" class="base-painting-wrapper">
+                <img src="./assets/monet_suiren.jpg" alt="Monet" class="painting-image">
+                <div class="invisible-grid">
+                    <div class="grid-cell-trigger" data-id="1"></div>
+                    <div class="grid-cell-trigger" data-id="2"></div>
+                    <div class="grid-cell-trigger" data-id="3"></div>
+                    <div class="grid-cell-trigger" data-id="4"></div>
+                    <div class="grid-cell-trigger" data-id="5"></div>
+                    <div class="grid-cell-trigger" data-id="6"></div>
+                    <div class="grid-cell-trigger" data-id="7"></div>
+                    <div class="grid-cell-trigger" data-id="8"></div>
+                    <div class="grid-cell-trigger" data-id="9"></div>
+                </div>
+            </div>
+
+            <div id="trimming-zoom-wrapper" class="trimming-zoom-wrapper" style="display: none;">
+                <img id="trimmed-image-target" src="./assets/monet_suiren.jpg" alt="Trimmed Monet">
             </div>
         </div>
-        <div style="font-size: 0.6rem; color: var(--text-muted); text-align: center; margin-top: 12px; letter-spacing: 0.05em;">
-            タップすると該当領域の音が重なります（再度タップで解除）
+
+        <div id="zoom-controls-area" class="zoom-controls-area" style="visibility: hidden;">
+            <div id="playing-sound-name" class="sound-title-display">音声再生中...</div>
+            <button id="btn-zoom-back" class="record-btn-boxed">全体表示に戻る</button>
         </div>
     </div>
 </div>
@@ -88,8 +95,7 @@
 
     <div class="section">
         <div class="section-title">空間に配置する音を1つ選択</div>
-        <div class="fixed-sound-selector" id="fixed-sound-list">
-            </div>
+        <div class="fixed-sound-selector" id="fixed-sound-list"></div>
     </div>
 
     <div class="section">
@@ -103,7 +109,7 @@
     </div>
 </div>
 
-<canvas id="unity-canvas" style="display: none; width: 0px; height: 0px Dino;"></canvas>
+<canvas id="unity-canvas" style="display: none; width: 0px; height: 0px;"></canvas>
 <script>
     var loaderUrl = "./Unity/Build/build_bird.loader.js"; 
     var config = {
@@ -120,19 +126,13 @@
     script.src = loaderUrl;
     script.onload = () => {
         createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {
-            console.log("Unity BGM Loading: " + (100 * progress) + "%");
+            console.log("Unity Loader: " + (100 * progress) + "%");
         }).then((instance) => {
             window.unityInstance = instance;
-            console.log("Unity BGM WebGL ロード完了。システムと正常に同期されました。");
-            if(currentUser !== "") {
-                playUnityAudio();
-            }
+            console.log("Unity WebGL ロード完了。");
         }).catch((message) => {
             console.error("Unity WebGL ロード失敗:", message);
         });
-    };
-    script.onerror = () => {
-        console.error("Unityのローダーファイルが見つかりません。");
     };
     document.body.appendChild(script);
 </script>
