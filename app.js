@@ -9,7 +9,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-// セッション固有の匿名ランダムユーザーIDを自動発行（ログイン画面の完全撤廃）
+// セッション識別用の匿名ランダムIDを裏で自動生成（画面には一切出さない）
 let currentUser = "User_" + Math.random().toString(36).substring(2, 6).toUpperCase(); 
 
 let audioCtx;
@@ -32,19 +32,15 @@ const soundMapping = {
     9: { name: "水面（カエル・虫の声）", file: "frogs.mp3" }
 };
 
-// --- Unity WebGL イベント送信（仕様準拠：Web GL 1〜9） ---
 function getUnityInstance() {
     if (typeof window.unityInstance !== "undefined" && window.unityInstance && typeof window.unityInstance.SendMessage === "function") return window.unityInstance;
-    if (typeof unityInstance !== "undefined" && unityInstance && typeof unityInstance.SendMessage === "function") return unityInstance;
     return null;
 }
 
 function triggerUnityWebGLSound(cellId) {
     const instance = getUnityInstance();
     if (instance) {
-        const messageName = `Web GL ${cellId}`;
-        instance.SendMessage('AudioController', 'PlayTargetWebGLSound', messageName);
-        console.log(`Unity SendMessage: ${messageName}`);
+        instance.SendMessage('AudioController', 'PlayTargetWebGLSound', `Web GL ${cellId}`);
     }
 }
 
@@ -55,7 +51,6 @@ function stopUnityWebGLSound() {
     }
 }
 
-// --- 音声初期化とプリロード ---
 async function initAudio() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -70,69 +65,33 @@ async function initAudio() {
                 const response = await fetch(url.replace("http://", "https://"));
                 const arrayBuffer = await response.arrayBuffer();
                 soundBuffers[id] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) {
-                console.error(`Audio preloading error for cell ${id}:`, e);
-            }
+            } catch (e) {}
         }
     }
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 }
 
-// --- DOM接続と初期セッション起動 ---
-const listenApp = document.getElementById('listen-app');
-const mainApp = document.getElementById('main-app');
-const listenUserDisplay = document.getElementById('listen-user-display');
-const btnChangeModeFromListen = document.getElementById('btn-change-mode-from-listen');
-const btnBackToListen = document.getElementById('btn-back-to-listen');
-const btnFixedPlay = document.getElementById('btn-fixed-play');
-const fixedSoundList = document.getElementById('fixed-sound-list');
-const wakelockStatus = document.getElementById('wakelock-status');
-
 const basePaintingWrapper = document.getElementById('base-painting-wrapper');
 const trimmingZoomWrapper = document.getElementById('trimming-zoom-wrapper');
 const trimmedImageTarget = document.getElementById('trimmed-image-target');
-const zoomControlsArea = document.getElementById('zoom-controls-area');
-const playingSoundName = document.getElementById('playing-sound-name');
-const btnZoomBack = document.getElementById('btn-zoom-back');
 
-// アプリ起動時にランダムユーザーIDを即時表示し、ロード開始
 window.addEventListener('DOMContentLoaded', () => {
-    if (listenUserDisplay) listenUserDisplay.innerText = currentUser;
     initAudio();
 });
 
-// モード間相互切替
-if (btnChangeModeFromListen) {
-    btnChangeModeFromListen.addEventListener('click', () => {
-        listenApp.style.display = 'none';
-        mainApp.style.display = 'block';
-        resetToGlobalPaintingView();
-        renderFixedSoundSelector();
-    });
-}
-if (btnBackToListen) {
-    btnBackToListen.addEventListener('click', () => {
-        mainApp.style.display = 'none';
-        listenApp.style.display = 'block';
-        if (listenUserDisplay) listenUserDisplay.innerText = currentUser;
-        stopFixedAudio();
-    });
-}
-
-// --- 自動トリミング変形 ＆ 音声再生ロジック ---
+// --- 純粋な絵画のタップ・インタラクション ---
 document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
     trigger.addEventListener('click', async () => {
         const id = trigger.getAttribute('data-id');
         await initAudio();
 
         currentActiveCellId = id;
-        playingSoundName.innerText = `再生中: ${soundMapping[id].name}`;
-
         applyImageTrimming(id);
+
         basePaintingWrapper.style.display = 'none';
         trimmingZoomWrapper.style.display = 'block';
-        zoomControlsArea.style.visibility = 'visible'; 
 
+        // 音声のループ再生開始
         if (activeSource) { try { activeSource.stop(); } catch(e){} }
         activeSource = audioCtx.createBufferSource();
         activeSource.buffer = soundBuffers[id];
@@ -142,6 +101,9 @@ document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
 
         cellStartTime = Date.now();
         triggerUnityWebGLSound(id);
+        
+        // スマホを配置した際のスリープを防止するロックを自動でオンにする
+        requestWakeLock();
     });
 });
 
@@ -151,108 +113,52 @@ function applyImageTrimming(id) {
     trimmedImageTarget.style.objectPosition = `${col * 50}% ${row * 50}%`;
 }
 
-if (btnZoomBack) {
-    btnZoomBack.addEventListener('click', () => {
-        resetToGlobalPaintingView();
-    });
-}
+// ズームされた絵画そのものをタップして、全体表示（静寂）へ戻す
+if (trimmingZoomWrapper) {
+    trimmingZoomWrapper.addEventListener('click', () => {
+        trimmingZoomWrapper.style.display = 'none';
+        basePaintingWrapper.style.display = 'block';
+        
+        if (activeSource) {
+            try { activeSource.stop(); } catch(e){}
+            activeSource = null;
+        }
+        stopUnityWebGLSound();
+        releaseWakeLock(); // スリープ防止を解除
 
-function resetToGlobalPaintingView() {
-    trimmingZoomWrapper.style.display = 'none';
-    basePaintingWrapper.style.display = 'block';
-    zoomControlsArea.style.visibility = 'hidden';
-    
-    if (activeSource) {
-        try { activeSource.stop(); } catch(e){}
-        activeSource = null;
-    }
-    stopUnityWebGLSound();
-
-    if (currentActiveCellId && cellStartTime > 0) {
-        const durationSec = (Date.now() - cellStartTime) / 1000;
-        db.collection("app_logs").add({
-            user: currentUser,
-            cellId: parseInt(currentActiveCellId),
-            cellName: soundMapping[currentActiveCellId].name,
-            duration: durationSec,
-            type: "grid_listen",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        currentActiveCellId = null;
-        cellStartTime = 0;
-    }
-}
-
-// --- セクション④：単一音選択＆生鳴らし固定制御 ---
-let selectedFixedId = null;
-let fixedSource = null;
-
-function renderFixedSoundSelector() {
-    fixedSoundList.innerHTML = "";
-    for (let id in soundMapping) {
-        const item = document.createElement('div');
-        item.className = "fixed-sound-item";
-        item.innerHTML = `
-            <input type="radio" name="fixed-sound" id="radio-${id}" value="${id}">
-            <label for="radio-${id}">${soundMapping[id].name}</label>
-        `;
-        fixedSoundList.appendChild(item);
-    }
-    document.querySelectorAll('input[name="fixed-sound"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            selectedFixedId = e.target.value;
-            stopFixedAudio();
-        });
-    });
-}
-
-if (btnFixedPlay) {
-    btnFixedPlay.addEventListener('click', async () => {
-        if (!selectedFixedId) { alert("配置する音を1つ選択してください。"); return; }
-        await initAudio();
-
-        if (!fixedSource) {
-            if (!soundBuffers[selectedFixedId]) return;
-            fixedSource = audioCtx.createBufferSource();
-            fixedSource.buffer = soundBuffers[selectedFixedId];
-            fixedSource.loop = true;
-            fixedSource.connect(bayerMasterGain);
-            fixedSource.start(0);
-            
-            btnFixedPlay.innerText = "出力を停止する";
-            btnFixedPlay.classList.add('recording');
-            requestWakeLock();
-        } else {
-            stopFixedAudio();
+        // 体験変容の検証データ（聴取ログ）をFirebaseへ自動裏同期
+        if (currentActiveCellId && cellStartTime > 0) {
+            const durationSec = (Date.now() - cellStartTime) / 1000;
+            db.collection("app_logs").add({
+                user: currentUser,
+                cellId: parseInt(currentActiveCellId),
+                cellName: soundMapping[currentActiveCellId].name,
+                duration: durationSec,
+                type: "grid_listen",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            currentActiveCellId = null;
+            cellStartTime = 0;
         }
     });
 }
 
-function stopFixedAudio() {
-    if (fixedSource) {
-        try { fixedSource.stop(); } catch(e){}
-        fixedSource = null;
-    }
-    btnFixedPlay.innerText = "この音を大音量でループ再生して配置する";
-    btnFixedPlay.classList.remove('recording');
-    releaseWakeLock();
-}
-
+// 画面スリープ防止（Wakelock）自動制御
 async function requestWakeLock() {
     try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-            wakelockStatus.style.display = 'block';
-        }
+        if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
     } catch (err) {}
 }
 function releaseWakeLock() {
     if (wakeLock !== null) {
         wakeLock.release().then(() => { wakeLock = null; });
-        wakelockStatus.style.display = 'none';
     }
 }
 
+// セキュリティ制限バイパス
 document.body.addEventListener('click', () => {
     if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }, true);
+document.body.addEventListener('touchstart', () => {
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}, {passive: true, once: true});
