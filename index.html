@@ -11,26 +11,60 @@
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1 class="project-title">絵画を聴く</h1>
+<div id="user-modal" class="modal-overlay">
+    <div class="modal-content" id="modal-step-1">
+        <h2>絵画を聴く</h2>
+        <div class="auth-buttons">
+            <button id="btn-choice-first" class="menu-choice-btn">初めて利用する</button>
+            <button id="btn-choice-return" class="menu-choice-btn">2回目以降（再開）</button>
+        </div>
+    </div>
+    
+    <div class="modal-content" id="modal-step-2" style="display: none;">
+        <h2 id="modal-input-title">ユーザー名を入力してください</h2>
+        <input type="text" id="input-username" placeholder="例: name">
+        <button id="btn-login">ログイン</button>
+        <button id="btn-back-step" class="action-btn-back">戻る</button>
+    </div>
+
+    <div class="modal-content" id="modal-step-3" style="display: none;">
+        <h2 style="margin-bottom: 30px;">モードを選択</h2>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <button id="btn-mode-listen" class="record-btn-boxed">絵画を音と鑑賞する</button>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="listen-app" style="display: none;">
+    <header style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
+                絵画を聴く
+            </h1>
+            <div style="font-size: 0.65rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
+                User: <span id="listen-user-display" style="color: var(--text-main);"></span>
+            </div>
+        </div>
     </header>
 
     <div class="section">
+        <div class="section-title">絵画インターフェース</div>
+        
         <div class="painting-view-container">
             
             <div id="base-painting-wrapper" class="base-painting-wrapper">
                 <img src="./assets/monet_suiren.jpg" alt="Monet" class="painting-image">
+                
                 <div class="invisible-grid">
-                    <div class="grid-cell-trigger" data-id="1"></div>
-                    <div class="grid-cell-trigger" data-id="2"></div>
-                    <div class="grid-cell-trigger" data-id="3"></div>
-                    <div class="grid-cell-trigger" data-id="4"></div>
-                    <div class="grid-cell-trigger" data-id="5"></div>
-                    <div class="grid-cell-trigger" data-id="6"></div>
-                    <div class="grid-cell-trigger" data-id="7"></div>
-                    <div class="grid-cell-trigger" data-id="8"></div>
-                    <div class="grid-cell-trigger" data-id="9"></div>
+                    <button class="grid-cell-trigger" data-id="1"></button>
+                    <button class="grid-cell-trigger" data-id="2"></button>
+                    <button class="grid-cell-trigger" data-id="3"></button>
+                    <button class="grid-cell-trigger" data-id="4"></button>
+                    <button class="grid-cell-trigger" data-id="5"></button>
+                    <button class="grid-cell-trigger" data-id="6"></button>
+                    <button class="grid-cell-trigger" data-id="7"></button>
+                    <button class="grid-cell-trigger" data-id="8"></button>
+                    <button class="grid-cell-trigger" data-id="9"></button>
                 </div>
             </div>
 
@@ -58,11 +92,13 @@
         productName: "kaiga-wo-kiku",
         productVersion: "0.1",
     };
+
     var script = document.createElement("script");
     script.src = loaderUrl;
     script.onload = () => {
         createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {}).then((instance) => {
             window.unityInstance = instance;
+            console.log("Unity WebGL ロード完了。");
         }).catch((message) => {
             console.error(message);
         });
