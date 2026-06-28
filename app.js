@@ -9,7 +9,9 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
 
-let currentUser = ""; 
+// セッション固有の匿名ランダムユーザーIDを自動発行（ログイン画面の完全撤廃）
+let currentUser = "User_" + Math.random().toString(36).substring(2, 6).toUpperCase(); 
+
 let audioCtx;
 let bayerMasterGain;
 let activeSource = null; 
@@ -76,21 +78,9 @@ async function initAudio() {
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 }
 
-// --- DOM接続 ---
-const userModal = document.getElementById('user-modal');
-const modalStep1 = document.getElementById('modal-step-1');
-const modalStep2 = document.getElementById('modal-step-2');
-const modalStep3 = document.getElementById('modal-step-3');
-const modalInputTitle = document.getElementById('modal-input-title');
-const btnChoiceFirst = document.getElementById('btn-choice-first');
-const btnChoiceReturn = document.getElementById('btn-choice-return');
-const btnBackStep = document.getElementById('btn-back-step');
-const inputUsername = document.getElementById('input-username');
-const btnLogin = document.getElementById('btn-login');
-const btnModeListen = document.getElementById('btn-mode-listen');
-const btnModeRecord = document.getElementById('btn-mode-record');
-const mainApp = document.getElementById('main-app');
+// --- DOM接続と初期セッション起動 ---
 const listenApp = document.getElementById('listen-app');
+const mainApp = document.getElementById('main-app');
 const listenUserDisplay = document.getElementById('listen-user-display');
 const btnChangeModeFromListen = document.getElementById('btn-change-mode-from-listen');
 const btnBackToListen = document.getElementById('btn-back-to-listen');
@@ -98,7 +88,6 @@ const btnFixedPlay = document.getElementById('btn-fixed-play');
 const fixedSoundList = document.getElementById('fixed-sound-list');
 const wakelockStatus = document.getElementById('wakelock-status');
 
-// トリミング制御用
 const basePaintingWrapper = document.getElementById('base-painting-wrapper');
 const trimmingZoomWrapper = document.getElementById('trimming-zoom-wrapper');
 const trimmedImageTarget = document.getElementById('trimmed-image-target');
@@ -106,59 +95,13 @@ const zoomControlsArea = document.getElementById('zoom-controls-area');
 const playingSoundName = document.getElementById('playing-sound-name');
 const btnZoomBack = document.getElementById('btn-zoom-back');
 
-// --- モーダル遷移ロジック ---
-if (btnChoiceFirst) {
-    btnChoiceFirst.addEventListener('click', (e) => {
-        e.preventDefault();
-        modalInputTitle.innerText = "新しく登録するユーザー名を入力";
-        modalStep1.style.display = 'none';
-        modalStep2.style.display = 'block';
-    });
-}
-if (btnChoiceReturn) {
-    btnChoiceReturn.addEventListener('click', (e) => {
-        e.preventDefault();
-        modalInputTitle.innerText = "登録済みのユーザー名を入力";
-        modalStep1.style.display = 'none';
-        modalStep2.style.display = 'block';
-    });
-}
-if (btnBackStep) {
-    btnBackStep.addEventListener('click', (e) => {
-        e.preventDefault();
-        modalStep2.style.display = 'none';
-        modalStep1.style.display = 'block';
-    });
-}
-if (btnLogin) {
-    btnLogin.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const username = inputUsername.value.trim();
-        if (!username) { alert("ユーザー名を入力してください。"); return; }
-        currentUser = username;
-        modalStep2.style.display = 'none';
-        modalStep3.style.display = 'block';
-        await initAudio(); 
-    });
-}
+// アプリ起動時にランダムユーザーIDを即時表示し、ロード開始
+window.addEventListener('DOMContentLoaded', () => {
+    if (listenUserDisplay) listenUserDisplay.innerText = currentUser;
+    initAudio();
+});
 
-if (btnModeListen) {
-    btnModeListen.addEventListener('click', (e) => {
-        e.preventDefault();
-        userModal.style.display = 'none';
-        listenApp.style.display = 'block';
-        listenUserDisplay.innerText = currentUser;
-    });
-}
-if (btnModeRecord) {
-    btnModeRecord.addEventListener('click', (e) => {
-        e.preventDefault();
-        userModal.style.display = 'none';
-        mainApp.style.display = 'block';
-        renderFixedSoundSelector();
-    });
-}
-
+// モード間相互切替
 if (btnChangeModeFromListen) {
     btnChangeModeFromListen.addEventListener('click', () => {
         listenApp.style.display = 'none';
@@ -171,7 +114,7 @@ if (btnBackToListen) {
     btnBackToListen.addEventListener('click', () => {
         mainApp.style.display = 'none';
         listenApp.style.display = 'block';
-        listenUserDisplay.innerText = currentUser;
+        if (listenUserDisplay) listenUserDisplay.innerText = currentUser;
         stopFixedAudio();
     });
 }
@@ -185,13 +128,11 @@ document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
         currentActiveCellId = id;
         playingSoundName.innerText = `再生中: ${soundMapping[id].name}`;
 
-        // 枠のサイズを完全に維持したまま、中身を切り替える
         applyImageTrimming(id);
         basePaintingWrapper.style.display = 'none';
         trimmingZoomWrapper.style.display = 'block';
-        zoomControlsArea.style.visibility = 'visible'; // 余白を保ったまま静かに出現
+        zoomControlsArea.style.visibility = 'visible'; 
 
-        // 音声ループ処理
         if (activeSource) { try { activeSource.stop(); } catch(e){} }
         activeSource = audioCtx.createBufferSource();
         activeSource.buffer = soundBuffers[id];
@@ -200,8 +141,6 @@ document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
         activeSource.start(0);
 
         cellStartTime = Date.now();
-
-        // Unity WebGLへトリガー送信
         triggerUnityWebGLSound(id);
     });
 });
