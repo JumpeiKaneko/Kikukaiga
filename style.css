@@ -1,4 +1,3 @@
-/* 最初のコードから、配色・フォント・引き締まった佇まいを100%継承 */
 :root {
     --bg-color: #ffffff;
     --text-main: #111111;
@@ -25,7 +24,6 @@ body {
     justify-content: center;
 }
 
-/* 最初のコンテナサイズ・美しい余白を完全厳守 */
 .container {
     width: 100%;
     max-width: 540px;
@@ -39,7 +37,6 @@ header {
     margin-bottom: 60px;
 }
 
-/* 元コードのMixerやTimelineと同様の、大文字・極小のセクションタイトル表現 */
 .section-title {
     font-size: 0.6rem;
     color: var(--text-muted);
@@ -48,7 +45,7 @@ header {
     text-transform: uppercase;
 }
 
-/* 絶対正方形を維持する絵画コンテナ（額縁としての役割を固定） */
+/* 絶対正方形コンテナ（額縁） */
 .painting-view-container {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -56,6 +53,7 @@ header {
     background-color: #111111;
     position: relative;
     overflow: hidden; 
+    cursor: pointer;
 }
 
 .base-painting-wrapper, .trimming-zoom-wrapper {
@@ -66,6 +64,11 @@ header {
     left: 0;
 }
 
+/* 通常時：タップエリアを一番手前に配置 */
+.base-painting-wrapper {
+    z-index: 10;
+}
+
 .painting-image {
     width: 100%;
     height: 100%;
@@ -73,7 +76,7 @@ header {
     display: block;
 }
 
-/* 表面からは線が一切見えない裏側の9分割タップ判定判定エリア（確実にタップを拾うため最前面へ） */
+/* 透明な裏の9分割タップエリア */
 .invisible-grid {
     position: absolute;
     top: 0;
@@ -93,10 +96,19 @@ header {
     cursor: pointer;
     width: 100%;
     height: 100%;
-    -webkit-tap-highlight-color: transparent; /* モバイルタップ時の青い残像をカット */
+    -webkit-tap-highlight-color: transparent;
 }
 
-/* 額縁の枠サイズを破壊せず、内側の画像位置だけを3倍のスケールで美しくシフトズームさせる指定 */
+/* ズームレイヤーの初期位置 */
+.trimming-zoom-wrapper {
+    z-index: 1; 
+}
+
+/* ズーム時：外枠にクラスがついた瞬間、ズーム画像を最前面（z-index: 60）に引っ張り上げる */
+.painting-view-container.is-zoomed .trimming-zoom-wrapper {
+    z-index: 60;
+}
+
 #trimmed-image-target {
     position: absolute;
     top: 0;
