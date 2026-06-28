@@ -3,8 +3,6 @@
     --text-main: #111111;
     --text-muted: #888888;
     --line-color: #e5e5e5;
-    --clip-color: #f0f0f0;
-    --danger: #cc0000;
 }
 
 * {
@@ -33,19 +31,35 @@ header {
     margin-bottom: 70px;
 }
 
-.section {
-    margin-bottom: 60px;
+.project-title {
+    font-size: 1.15rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    color: var(--text-main);
 }
 
-.section-title {
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    letter-spacing: 0.2em;
-    margin-bottom: 24px;
-    text-transform: uppercase;
+/* 元コードから完全継承した、四角いボタンのデザイン */
+.record-btn-boxed {
+    width: 100%;
+    color: var(--text-main);
+    background-color: transparent;
+    border: 1px solid var(--text-main);
+    padding: 10px 0;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+    z-index: 100;
 }
 
-/* 絶対正方形コンテナ（額縁） */
+.record-btn-boxed:hover {
+    background-color: var(--text-main);
+    color: var(--bg-color);
+}
+
+/* 絶対正方形を維持する絵画コンテナ外枠（額縁） */
 .painting-view-container {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -53,30 +67,28 @@ header {
     background-color: #111111;
     position: relative;
     overflow: hidden; 
-    cursor: pointer;
 }
 
-.base-painting-wrapper, .trimming-zoom-wrapper {
-    width: 100%;
-    height: 100%;
+/* 初期状態（等倍表示）の画像スタイル */
+#painting-target-image {
     position: absolute;
     top: 0;
     left: 0;
-}
-
-/* 通常時：タップエリアを一番手前に配置 */
-.base-painting-wrapper {
-    z-index: 10;
-}
-
-.painting-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    z-index: 1;
+    transition: width 0.2s ease-out, height 0.2s ease-out, object-position 0.2s ease-out;
 }
 
-/* 透明な裏の9分割タップエリア */
+/* ズーム状態（is-zoomed）が外枠に付与された際、画像だけを枠の中で3倍（300%）に変形 */
+.painting-view-container.is-zoomed #painting-target-image {
+    width: 300%;
+    height: 300%;
+}
+
+/* 透明な最前面の9分割タップエリア（z-index: 99固定） */
 .invisible-grid {
     position: absolute;
     top: 0;
@@ -86,7 +98,7 @@ header {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    z-index: 50;
+    z-index: 99;
 }
 
 .grid-cell-trigger {
@@ -99,23 +111,11 @@ header {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* ズームレイヤーの初期位置 */
-.trimming-zoom-wrapper {
-    z-index: 1; 
-}
-
-/* ズーム時：外枠にクラスがついた瞬間、ズーム画像を最前面（z-index: 60）に引っ張り上げる */
-.painting-view-container.is-zoomed .trimming-zoom-wrapper {
-    z-index: 60;
-}
-
-#trimmed-image-target {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 300%;
-    height: 300%;
-    object-fit: cover;
-    display: block;
-    transition: object-position 0.2s ease-out;
+/* 下部「戻る」エリアの余白設計 */
+.controls-area {
+    width: 100%;
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    height: 40px; 
 }
