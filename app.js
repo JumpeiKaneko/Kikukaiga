@@ -1,158 +1,98 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyCwBqi08ShVjJ90Mku2NsXJK0E03p4CsT4",
-    authDomain: "kaiga-wo-kiku.firebaseapp.com",
-    projectId: "kaiga-wo-kiku",
-    storageBucket: "kaiga-wo-kiku.firebasestorage.app"
-};
+let wakeLock = null;
+let currentUnityInstance = null;
+let currentScriptElement = null;
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
+// タップされた番号のWebGLを動的にロードして音を鳴らす関数
+function loadAndPlayUnityWebGL(id) {
+    // 既存のWebGLインスタンスやスクリプトが残っていれば完全に削除
+    unloadUnityWebGL();
 
-let currentUser = ""; 
-let wakeLock = null;    
+    const unityContainer = document.getElementById('unity-container');
+    unityContainer.innerHTML = `<canvas id="unity-canvas" style="width: 0px; height: 0px;"></canvas>`;
 
-// --- Unity（WebGL）インスタンス自動検出・直接送信ロジック ---
-function getUnityInstance() {
-    if (typeof window.unityInstance !== "undefined" && window.unityInstance && typeof window.unityInstance.SendMessage === "function") return window.unityInstance;
-    if (typeof unityInstance !== "undefined" && unityInstance && typeof unityInstance.SendMessage === "function") return unityInstance;
-    if (typeof gameInstance !== "undefined" && gameInstance && typeof gameInstance.SendMessage === "function") return gameInstance;
-    
-    for (let key in window) {
+    // タップされた番号に応じたビルドパスの動的生成
+    const loaderUrl = `./Unity/${id}/Build/build_bird.loader.js`; 
+    const config = {
+        dataUrl: `./Unity/${id}/Build/build_bird.data`,
+        frameworkUrl: `./Unity/${id}/Build/build_bird.framework.js`,
+        codeUrl: `./Unity/${id}/Build/build_bird.wasm`,
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: `kaiga-wo-kiku-${id}`,
+        productVersion: "0.1",
+    };
+
+    currentScriptElement = document.createElement("script");
+    currentScriptElement.src = loaderUrl;
+    currentScriptElement.onload = () => {
+        createUnityInstance(document.querySelector("#unity-canvas"), config, (progress) => {}).then((instance) => {
+            currentUnityInstance = instance;
+            // ロード完了後、該当ビルドにPlay命令を送信
+            instance.SendMessage('AudioController', 'PlayTargetWebGLSound', `Web GL ${id}`);
+        }).catch((message) => {
+            console.error(`WebGL ${id} Load Failed:`, message);
+        });
+    };
+    document.body.appendChild(currentScriptElement);
+}
+
+// 全体表示に戻る際、再生中のWebGLシステムを完全に停止・破棄する関数
+function unloadUnityWebGL() {
+    if (currentUnityInstance) {
         try {
-            if (window[key] && typeof window[key].SendMessage === "function") {
-                return window[key];
+            currentUnityInstance.SendMessage('AudioController', 'StopBackgroundSound');
+            // Unityインスタンス自体のQuit処理（実装されている場合）
+            if (typeof currentUnityInstance.Quit === "function") {
+                currentUnityInstance.Quit();
             }
-        } catch (e) {}
+        } catch(e) {}
+        currentUnityInstance = null;
     }
-    return null;
+    if (currentScriptElement) {
+        currentScriptElement.remove();
+        currentScriptElement = null;
+    }
+    const unityContainer = document.getElementById('unity-container');
+    unityContainer.innerHTML = '';
 }
 
-function triggerUnityWebGLSound(cellId) {
-    const instance = getUnityInstance();
-    if (instance) {
-        const messageName = `Web GL ${cellId}`;
-        instance.SendMessage('AudioController', 'PlayTargetWebGLSound', messageName);
-        console.log(`Unity Trigger: ${messageName}`);
-    }
-}
-
-function stopUnityWebGLSound() {
-    const instance = getUnityInstance();
-    if (instance) {
-        instance.SendMessage('AudioController', 'StopBackgroundSound');
-        console.log("Unity Stop");
-    }
-}
-
-// --- DOM接続 ---
-const userModal = document.getElementById('user-modal');
-const modalStep1 = document.getElementById('modal-step-1');
-const modalStep2 = document.getElementById('modal-step-2');
-const modalStep3 = document.getElementById('modal-step-3'); 
-const modalInputTitle = document.getElementById('modal-input-title');
-const btnChoiceFirst = document.getElementById('btn-choice-first');
-const btnChoiceReturn = document.getElementById('btn-choice-return');
-const btnBackStep = document.getElementById('btn-back-step');
-const inputUsername = document.getElementById('input-username');
-const btnLogin = document.getElementById('btn-login');
-const btnModeListen = document.getElementById('btn-mode-listen');
-const listenApp = document.getElementById('listen-app');
-const listenUserDisplay = document.getElementById('listen-user-display');
-
-const basePaintingWrapper = document.getElementById('base-painting-wrapper');
-const trimmingZoomWrapper = document.getElementById('trimming-zoom-wrapper');
+const viewFull = document.getElementById('view-full');
+const viewZoom = document.getElementById('view-zoom');
 const trimmedImageTarget = document.getElementById('trimmed-image-target');
-const controlsArea = document.getElementById('controls-area');
-const btnZoomBack = document.getElementById('btn-zoom-back');
 
-// --- モーダル遷移ロジック（元の仕様のまま維持） ---
-if (btnChoiceFirst) {
-    btnChoiceFirst.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (modalInputTitle) modalInputTitle.innerText = "新しく登録するユーザー名を入力";
-        if (modalStep1) modalStep1.style.display = 'none';
-        if (modalStep2) modalStep2.style.display = 'block';
-    });
-}
-
-if (btnChoiceReturn) {
-    btnChoiceReturn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (modalInputTitle) modalInputTitle.innerText = "登録済みのユーザー名を入力";
-        if (modalStep1) modalStep1.style.display = 'none';
-        if (modalStep2) modalStep2.style.display = 'block';
-    });
-}
-
-if (btnBackStep) {
-    btnBackStep.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (modalStep2) modalStep2.style.display = 'none';
-        if (modalStep1) modalStep1.style.display = 'block';
-    });
-}
-
-if (btnLogin) {
-    btnLogin.addEventListener('click', (e) => {
-        e.preventDefault();
-        const username = inputUsername.value.trim();
-        if (!username) { alert("ユーザー名を入力してください。"); return; }
-        currentUser = username;
-        
-        if (modalStep1) modalStep1.style.display = 'none';
-        if (modalStep2) modalStep2.style.display = 'none';
-        if (modalStep3) modalStep3.style.display = 'block';
-    });
-}
-
-if (btnModeListen) {
-    btnModeListen.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (userModal) userModal.style.display = 'none';
-        if (listenApp) listenApp.style.display = 'block';
-        if (listenUserDisplay) listenUserDisplay.innerText = currentUser;
-    });
-}
-
-// --- 9分割タップ判定・自動トリミング変形 ＆ WebGL送信 ---
+// 1. 初期状態（全体表示）からの9分割タップ
 document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
-    trigger.addEventListener('click', () => {
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
         const id = trigger.getAttribute('data-id');
 
-        applyImageTrimming(id);
-        basePaintingWrapper.style.display = 'none';
-        trimmingZoomWrapper.style.display = 'block';
-        controlsArea.style.visibility = 'visible'; 
+        // 枠内ズーム位置の計算
+        const row = Math.floor((id - 1) / 3);
+        const col = (id - 1) % 3;
+        trimmedImageTarget.style.objectPosition = `${col * 50}% ${row * 50}%`;
 
-        // WebGL側へ直接メッセージ「Web GL 1〜9」を送信
-        triggerUnityWebGLSound(id);
+        // 表示切り替え
+        viewFull.style.display = 'none';
+        viewZoom.style.display = 'block';
+
+        // 該当番号の独立したWebGLをロード＆再生
+        loadAndPlayUnityWebGL(id);
         
-        // 画面スリープ防止ロック開始
         requestWakeLock();
     });
 });
 
-function applyImageTrimming(id) {
-    const row = Math.floor((id - 1) / 3); 
-    const col = (id - 1) % 3;             
-    trimmedImageTarget.style.objectPosition = `${col * 50}% ${row * 50}%`;
-}
+// 2. ズーム状態からの再タップで全体表示へ復帰
+viewZoom.addEventListener('click', () => {
+    viewZoom.style.display = 'none';
+    viewFull.style.display = 'block';
 
-// --- 「戻る」テキストボタンクリックによる静寂復帰 ---
-if (btnZoomBack) {
-    btnZoomBack.addEventListener('click', () => {
-        trimmingZoomWrapper.style.display = 'none';
-        basePaintingWrapper.style.display = 'block';
-        controlsArea.style.visibility = 'hidden'; 
-        
-        // WebGLサウンド停止
-        stopUnityWebGLSound();
-        releaseWakeLock();
-    });
-}
+    // 読み込んでいたWebGLを完全にアンロードして静寂に戻す
+    unloadUnityWebGL();
+    releaseWakeLock();
+});
 
-// スリープ防止制御
+// スリープ制御
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
