@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>絵画を聴く</title>
-    <link rel="stylesheet" href="style.css?v=20260628_perfect_boxed">
+    <link rel="stylesheet" href="style.css?v=20260628_divided_perfect">
 </head>
 <body>
 
@@ -16,7 +16,9 @@
     <main>
         <div class="painting-view-container" id="painting-frame">
             
-            <img id="painting-target-image" src="./assets/monet_suiren.jpg" alt="Monet">
+            <div class="image-clipper">
+                <img id="painting-target-image" src="./assets/monet_suiren.jpg" alt="Monet">
+            </div>
             
             <div class="invisible-grid">
                 <button class="grid-cell-trigger" data-id="1"></button>
@@ -40,6 +42,6 @@
 
 <div id="unity-container" style="display: none;"></div>
 
-<script src="app.js?v=20260628_perfect_boxed"></script>
+<script src="app.js?v=20260628_divided_perfect"></script>
 </body>
 </html>
