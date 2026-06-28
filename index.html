@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>絵画を聴く — 睡蓮の池と日本の橋</title>
+    <title>絵画を聴く</title>
     <link rel="stylesheet" href="style.css?v=20260628_kiku">
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -11,39 +11,14 @@
 </head>
 <body>
 
-<div id="user-modal" class="modal-overlay">
-    <div class="modal-content" id="modal-step-1">
-        <h2>絵画を聴く</h2>
-        <div class="auth-buttons">
-            <button id="btn-choice-first" class="menu-choice-btn">初めて利用する</button>
-            <button id="btn-choice-return" class="menu-choice-btn">2回目以降（再開）</button>
-        </div>
-    </div>
-    
-    <div class="modal-content" id="modal-step-2" style="display: none;">
-        <h2 id="modal-input-title">ユーザー名を入力してください</h2>
-        <input type="text" id="input-username" placeholder="例: name">
-        <button id="btn-login">ログイン</button>
-        <button id="btn-back-step" class="action-btn-back">戻る</button>
-    </div>
-
-    <div class="modal-content" id="modal-step-3" style="display: none;">
-        <h2 style="margin-bottom: 30px;">モードを選択</h2>
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <button id="btn-mode-listen" class="record-btn-boxed">絵画を音と鑑賞する</button>
-            <button id="btn-mode-record" class="record-btn-boxed">みんなで音を出す（固定演奏）</button>
-        </div>
-    </div>
-</div>
-
-<div class="container" id="listen-app" style="display: none;">
+<div class="container" id="listen-app">
     <header style="display: flex; justify-content: space-between; align-items: flex-start;">
         <div style="display: flex; flex-direction: column; gap: 8px;">
             <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
                 絵画を聴く
             </h1>
-            <div style="font-size: 0.65rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
-                User: <span id="listen-user-display" style="color: var(--text-main);"></span>
+            <div style="font-size: 0.55rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
+                ID: <span id="listen-user-display" style="color: var(--text-main);">生成中...</span>
             </div>
         </div>
         <button id="btn-change-mode-from-listen" class="action-btn">演奏モードへ</button>
@@ -86,7 +61,7 @@
             <h1 style="margin: 0; font-size: 1.15rem; font-weight: 400; letter-spacing: 0.25em; color: var(--text-main);">
                 絵画を聴く
             </h1>
-            <div style="font-size: 0.65rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
+            <div style="font-size: 0.55rem; font-weight: 300; letter-spacing: 0.1em; color: var(--text-muted);">
                 Mode: <span style="color: var(--text-main);">マルチチャンネル演奏固定</span>
             </div>
         </div>
