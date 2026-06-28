@@ -1,149 +1,83 @@
-const firebaseConfig = {
-    apiKey: "AIzaSyCwBqi08ShVjJ90Mku2NsXJK0E03p4CsT4",
-    authDomain: "kaiga-wo-kiku.firebaseapp.com",
-    projectId: "kaiga-wo-kiku",
-    storageBucket: "kaiga-wo-kiku.firebasestorage.app"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const storage = firebase.storage();
-
-// セッション識別用の匿名ランダムIDを裏で自動生成（画面には一切出さない）
-let currentUser = "User_" + Math.random().toString(36).substring(2, 6).toUpperCase(); 
-
-let audioCtx;
-let bayerMasterGain;
-let activeSource = null; 
-let soundBuffers = {};  
 let wakeLock = null;    
-let currentActiveCellId = null;
-let cellStartTime = 0;
 
-const soundMapping = {
-    1: { name: "植物音（木々を揺らす風）", file: "forest_wind.mp3" },
-    2: { name: "植物音（竹の擦れ合い）", file: "bamboo.mp3" },
-    3: { name: "植物音（上空の鳥の声）", file: "sky_birds.mp3" },
-    4: { name: "橋周辺（水門の音）", file: "water_gate.mp3" },
-    5: { name: "橋周辺（太鼓橋のきしみ）", file: "bridge_creak.mp3" },
-    6: { name: "橋周辺（近くを飛ぶ鳥）", file: "near_birds.mp3" },
-    7: { name: "水面（小川の水流）", file: "stream.mp3" },
-    8: { name: "水面（水面の揺らぎ）", file: "water_surface.mp3" },
-    9: { name: "水面（カエル・虫の声）", file: "frogs.mp3" }
-};
-
+// --- Unity WebGL インスタンスへの直接メッセージ送信 ---
 function getUnityInstance() {
     if (typeof window.unityInstance !== "undefined" && window.unityInstance && typeof window.unityInstance.SendMessage === "function") return window.unityInstance;
+    if (typeof unityInstance !== "undefined" && unityInstance && typeof unityInstance.SendMessage === "function") return unityInstance;
     return null;
 }
 
+// タップされたタイミングでUnity側のAudioControllerへ「Web GL 1」〜「Web GL 9」を直接トリガー
 function triggerUnityWebGLSound(cellId) {
     const instance = getUnityInstance();
     if (instance) {
-        instance.SendMessage('AudioController', 'PlayTargetWebGLSound', `Web GL ${cellId}`);
+        const messageName = `Web GL ${cellId}`;
+        instance.SendMessage('AudioController', 'PlayTargetWebGLSound', messageName);
+        console.log(`Unity Trigger: ${messageName}`);
     }
 }
 
+// 戻るボタンが押された際に、Unity側のサウンドを完全に停止させる
 function stopUnityWebGLSound() {
     const instance = getUnityInstance();
     if (instance) {
         instance.SendMessage('AudioController', 'StopBackgroundSound');
+        console.log("Unity Sound Stopped.");
     }
 }
 
-async function initAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        bayerMasterGain = audioCtx.createGain();
-        bayerMasterGain.gain.value = 1.0;
-        bayerMasterGain.connect(audioCtx.destination);
-        
-        for (let id in soundMapping) {
-            try {
-                const storageRef = storage.ref().child(`assets/${soundMapping[id].file}`);
-                const url = await storageRef.getDownloadURL();
-                const response = await fetch(url.replace("http://", "https://"));
-                const arrayBuffer = await response.arrayBuffer();
-                soundBuffers[id] = await audioCtx.decodeAudioData(arrayBuffer);
-            } catch (e) {}
-        }
-    }
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-}
-
+// --- DOM要素の接続 ---
 const basePaintingWrapper = document.getElementById('base-painting-wrapper');
 const trimmingZoomWrapper = document.getElementById('trimming-zoom-wrapper');
 const trimmedImageTarget = document.getElementById('trimmed-image-target');
+const controlsArea = document.getElementById('controls-area');
+const btnZoomBack = document.getElementById('btn-zoom-back');
 
-window.addEventListener('DOMContentLoaded', () => {
-    initAudio();
-});
-
-// --- 純粋な絵画のタップ・インタラクション ---
+// --- 9分割タップ・自動トリミング ＆ WebGLサウンドトリガー ---
 document.querySelectorAll('.grid-cell-trigger').forEach(trigger => {
-    trigger.addEventListener('click', async () => {
+    trigger.addEventListener('click', () => {
         const id = trigger.getAttribute('data-id');
-        await initAudio();
 
-        currentActiveCellId = id;
+        // 正方形の枠のサイズを維持したまま、中身のオブジェクトポジションをシフトして変形
         applyImageTrimming(id);
 
+        // 全体表示を隠し、トリミング画面と「戻る」文字を静かに出現させる
         basePaintingWrapper.style.display = 'none';
         trimmingZoomWrapper.style.display = 'block';
+        controlsArea.style.visibility = 'visible'; 
 
-        // 音声のループ再生開始
-        if (activeSource) { try { activeSource.stop(); } catch(e){} }
-        activeSource = audioCtx.createBufferSource();
-        activeSource.buffer = soundBuffers[id];
-        activeSource.loop = true;
-        activeSource.connect(bayerMasterGain);
-        activeSource.start(0);
-
-        cellStartTime = Date.now();
+        // WebGL側へ直接、音の再生命令（Web GL 1〜9）を飛ばす
         triggerUnityWebGLSound(id);
         
-        // スマホを配置した際のスリープを防止するロックを自動でオンにする
+        // 端末が途中で画面スリープして音が途切れるのを自動防止
         requestWakeLock();
     });
 });
 
+// 額縁のサイズを破壊せず、内側の画像位置だけを縦横％で美しくズームさせる関数
 function applyImageTrimming(id) {
     const row = Math.floor((id - 1) / 3); 
     const col = (id - 1) % 3;             
     trimmedImageTarget.style.objectPosition = `${col * 50}% ${row * 50}%`;
 }
 
-// ズームされた絵画そのものをタップして、全体表示（静寂）へ戻す
-if (trimmingZoomWrapper) {
-    trimmingZoomWrapper.addEventListener('click', () => {
+// --- 「戻る」テキストをクリックした際の挙動 ---
+if (btnZoomBack) {
+    btnZoomBack.addEventListener('click', () => {
+        // 全体表示の1枚絵へと静かに復帰
         trimmingZoomWrapper.style.display = 'none';
         basePaintingWrapper.style.display = 'block';
+        controlsArea.style.visibility = 'hidden'; 
         
-        if (activeSource) {
-            try { activeSource.stop(); } catch(e){}
-            activeSource = null;
-        }
+        // WebGL側の音を完全に停止し、静寂に戻す
         stopUnityWebGLSound();
-        releaseWakeLock(); // スリープ防止を解除
-
-        // 体験変容の検証データ（聴取ログ）をFirebaseへ自動裏同期
-        if (currentActiveCellId && cellStartTime > 0) {
-            const durationSec = (Date.now() - cellStartTime) / 1000;
-            db.collection("app_logs").add({
-                user: currentUser,
-                cellId: parseInt(currentActiveCellId),
-                cellName: soundMapping[currentActiveCellId].name,
-                duration: durationSec,
-                type: "grid_listen",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            currentActiveCellId = null;
-            cellStartTime = 0;
-        }
+        
+        // スリープ防止ロックを解除
+        releaseWakeLock();
     });
 }
 
-// 画面スリープ防止（Wakelock）自動制御
+// 端末の画面スリープ防止（Wakelock API）自動制御
 async function requestWakeLock() {
     try {
         if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
@@ -154,11 +88,3 @@ function releaseWakeLock() {
         wakeLock.release().then(() => { wakeLock = null; });
     }
 }
-
-// セキュリティ制限バイパス
-document.body.addEventListener('click', () => {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-}, true);
-document.body.addEventListener('touchstart', () => {
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-}, {passive: true, once: true});
